@@ -6,6 +6,7 @@
 //  Copyright © 2017 Henrik Panhans. All rights reserved.
 //
 
+import UIKit
 import Foundation
 import SwiftyJSON
 
@@ -68,7 +69,7 @@ class Schedule: NSObject, NSCoding, Comparable {
                                     state: state)
                 
                 let index = IndexPath(row: grid.periodStarts[period.startTime]!,
-                                      column: columnIds[period.date.toInt()]!)
+                                      section: columnIds[period.date.toInt()]!)
                 
                 periods[index] = period
             }
