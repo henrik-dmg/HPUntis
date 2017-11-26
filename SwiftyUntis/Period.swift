@@ -9,7 +9,7 @@
 import Foundation
 import SwiftyJSON
 
-enum PeriodState: String  {
+public enum PeriodState: String  {
     case active = "active";
     case cancelled = "cancelled";
     case irregular = "irregular";
@@ -17,8 +17,8 @@ enum PeriodState: String  {
 }
 
 @objc(Period)
-class Period: NSObject, NSCoding {
-    func encode(with aCoder: NSCoder) {
+public class Period: NSObject, NSCoding {
+    public func encode(with aCoder: NSCoder) {
         aCoder.encode(teacherId, forKey: "teacher")
         aCoder.encode(roomId, forKey: "room")
         aCoder.encode(subjectId, forKey: "subject")
@@ -28,7 +28,7 @@ class Period: NSObject, NSCoding {
         aCoder.encode(state.rawValue, forKey: "state")
     }
     
-    required init?(coder aDecoder: NSCoder) {
+    public required init?(coder aDecoder: NSCoder) {
         self.teacherId = aDecoder.decodeInteger(forKey: "teacher")
         self.roomId = aDecoder.decodeInteger(forKey: "room")
         self.subjectId = aDecoder.decodeInteger(forKey: "subject")
@@ -38,15 +38,15 @@ class Period: NSObject, NSCoding {
         self.state = PeriodState(rawValue: (aDecoder.decodeObject(forKey: "state") as! String))!
     }
     
-    var teacherId: Int
-    var roomId: Int
-    var subjectId: Int
-    var startTime: Int
-    var endTime: Int
-    var date: Date
-    var state: PeriodState
+    public var teacherId: Int
+    public var roomId: Int
+    public var subjectId: Int
+    public var startTime: Int
+    public var endTime: Int
+    public var date: Date
+    public var state: PeriodState
     
-    init(teacher: Int, room: Int, subj: Int, start: Int, end: Int, date: Int, state: PeriodState) {
+    public init(teacher: Int, room: Int, subj: Int, start: Int, end: Int, date: Int, state: PeriodState) {
         self.teacherId = teacher
         self.roomId = room
         self.subjectId = subj

@@ -9,56 +9,46 @@
 import Foundation
 import UIKit
 
-extension UIColor {
-    public convenience init?(hexString: String) {
-        let r, g, b, a: CGFloat
+public extension UIColor {
+    convenience init(hexString: String) {
+        let hexString: String = hexString.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines)
+        let scanner            = Scanner(string: hexString)
         
-        if hexString.hasPrefix("#") {
-            let start = hexString.index(hexString.startIndex, offsetBy: 1)
-            let hexColor = String(hexString[start...])
-            
-            if hexColor.count == 8 {
-                let scanner = Scanner(string: hexColor)
-                var hexNumber: UInt64 = 0
-                
-                if scanner.scanHexInt64(&hexNumber) {
-                    r = CGFloat((hexNumber & 0xff000000) >> 24) / 255
-                    g = CGFloat((hexNumber & 0x00ff0000) >> 16) / 255
-                    b = CGFloat((hexNumber & 0x0000ff00) >> 8) / 255
-                    a = CGFloat(hexNumber & 0x000000ff) / 255
-                    
-                    self.init(red: r, green: g, blue: b, alpha: a)
-                    return
-                }
-            }
+        if (hexString.hasPrefix("#")) {
+            scanner.scanLocation = 1
         }
         
-        return nil
+        var color:UInt32 = 0
+        scanner.scanHexInt32(&color)
+        
+        let mask = 0x000000FF
+        let r = Int(color >> 16) & mask
+        let g = Int(color >> 8) & mask
+        let b = Int(color) & mask
+        
+        let red   = CGFloat(r) / 255.0
+        let green = CGFloat(g) / 255.0
+        let blue  = CGFloat(b) / 255.0
+        
+        self.init(red:red, green:green, blue:blue, alpha:1)
+    }
+    
+    func hexString() -> String {
+        var r:CGFloat = 0
+        var g:CGFloat = 0
+        var b:CGFloat = 0
+        var a:CGFloat = 0
+        
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+        
+        let rgb:Int = (Int)(r*255)<<16 | (Int)(g*255)<<8 | (Int)(b*255)<<0
+        
+        return String(format:"#%06x", rgb)
     }
 }
 
-extension Date {
-    func dayOfMonth() -> Int {
-        let calendar = Calendar.current
-        let weekOfYear = calendar.component(.day, from: self)
-        return weekOfYear
-    }
-    
-    func time() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: self)
-    }
-    
-    func localizedDayName() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE"
-        formatter.locale = Locale.current
-        
-        return formatter.string(from: self)
-    }
-    
-    func toInt() -> Int {
+public extension Date {
+    public func toInt() -> Int {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
         let int = Int(formatter.string(from: self))!
@@ -75,7 +65,7 @@ extension Date {
         return
     }
     
-    func week() -> Int {
+    public func week() -> Int {
         let calendar = Calendar.current
         let comps = calendar.dateComponents([.weekOfYear, .weekday], from: self)
         
@@ -86,7 +76,7 @@ extension Date {
         }
     }
     
-    func daysInWeek() -> [Date] {
+    public func daysInWeek() -> [Date] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: self)
         let dayOfWeek = calendar.component(.weekday, from: today)
@@ -98,27 +88,8 @@ extension Date {
     }
 }
 
-extension UILabel {
-    func makeTextStrikeThrough() {
-        if self.text != nil {
-            let string =  NSMutableAttributedString(string: self.text!)
-            string.addAttribute(NSAttributedStringKey.strikethroughStyle, value: 2, range: NSMakeRange(0, string.length))
-            self.attributedText = string
-        }
-    }
-}
-
-extension String {
-    public func dateId() -> String {
-        let date = Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy.MM.dd_HH:mm:ss"
-        return formatter.string(from: date)
-    }
-}
-
-extension Bool {
-    func tapticFeedback() {
+public extension Bool {
+    public func tapticFeedback() {
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         
@@ -131,7 +102,7 @@ extension Bool {
     }
 }
 
-extension Int {
+public extension Int {
     public func toWeekdays(year: Int) -> [Date] {
         var c = DateComponents()
         c.weekOfYear = self

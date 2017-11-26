@@ -10,19 +10,30 @@ import Foundation
 import SwiftyJSON
 
 @objc(Teacher)
-class Teacher: NSObject {
-    var rawData: JSON
-    var id: Int
-    var short: String
-    var firstName: String
-    var lastName: String
+public class Teacher: NSObject, NSCoding {
+    public func encode(with aCoder: NSCoder) {
+        aCoder.encode(self.id, forKey: "id")
+        aCoder.encode(self.foreName, forKey: "foreName")
+        aCoder.encode(self.lastName, forKey: "longName")
+        aCoder.encode(self.name, forKey: "name")
+    }
     
-    init(_ json: JSON) {
-        rawData = json
-        
+    public required init?(coder aDecoder: NSCoder) {
+        self.id = aDecoder.decodeInteger(forKey: "id")
+        self.foreName = aDecoder.decodeObject(forKey: "foreName") as! String
+        self.lastName = aDecoder.decodeObject(forKey: "longName") as! String
+        self.name = aDecoder.decodeObject(forKey: "name") as! String
+    }
+    
+    public var id: Int
+    public var name: String
+    public var foreName: String
+    public var lastName: String
+    
+    public init(_ json: JSON) {
         self.id = json["id"].int!
-        self.short = json["name"].string!
-        self.firstName = json["foreName"].string!
+        self.name = json["name"].string!
+        self.foreName = json["foreName"].string!
         self.lastName = json["longName"].string!
     }
 }

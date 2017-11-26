@@ -11,35 +11,46 @@ import Foundation
 import SwiftyJSON
 
 @objc(Schedule)
-class Schedule: NSObject, NSCoding, Comparable {
-    func encode(with aCoder: NSCoder) {
+public class Schedule: NSObject, NSCoding, Comparable {
+    public func encode(with aCoder: NSCoder) {
         aCoder.encode(timeGrid, forKey: "timeGrid")
         aCoder.encode(periods, forKey: "periods")
         aCoder.encode(week, forKey: "week")
         aCoder.encode(columnIds, forKey: "columnIds")
     }
     
-    required init?(coder aDecoder: NSCoder) {
+    public required init?(coder aDecoder: NSCoder) {
         timeGrid = aDecoder.decodeObject(forKey: "timeGrid") as! Timegrid
         periods = aDecoder.decodeObject(forKey: "periods") as! [IndexPath:Period]
         week = aDecoder.decodeInteger(forKey: "week")
         columnIds = aDecoder.decodeObject(forKey: "columnIds") as! [Int:Int]
     }
     
-    static func <(lhs: Schedule, rhs: Schedule) -> Bool {
+    public static func <(lhs: Schedule, rhs: Schedule) -> Bool {
         return false
     }
     
-    static func ==(lhs: Schedule, rhs: Schedule) -> Bool {
-        return NSDictionary(dictionary: lhs.periods).isEqual(to: rhs.periods)
+    public static func ==(lhs: Schedule, rhs: Schedule) -> Bool {
+        var somethingChanged = false
+        
+        for key in lhs.periods.keys {
+            if let leftPeriod = lhs.periods[key], let rightPeriod = lhs.periods[key] {
+                if leftPeriod.state != rightPeriod.state {
+                    print("state changed")
+                    somethingChanged = true
+                    return true
+                }
+            }
+        }
+        return somethingChanged
     }
     
-    var timeGrid: Timegrid
-    var periods = [IndexPath:Period]()
-    var week: Int
+    public var timeGrid: Timegrid
+    public var periods = [IndexPath:Period]()
+    public var week: Int
     private var columnIds = [Int:Int]()
     
-    init(_ json: JSON, grid: Timegrid, dateRange: [Date]) {
+    public init(_ json: JSON, grid: Timegrid, dateRange: [Date]) {
         timeGrid = grid
         
         week = dateRange[0].week()

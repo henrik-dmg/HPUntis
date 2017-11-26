@@ -9,8 +9,8 @@
 import Foundation
 import SwiftyJSON
 
-class Timegrid: NSObject, NSCoding {
-    func encode(with aCoder: NSCoder) {
+public class Timegrid: NSObject, NSCoding {
+    public func encode(with aCoder: NSCoder) {
         aCoder.encode(numberOfDays, forKey: "numberOfDays")
         aCoder.encode(maxNumberOfPeriods, forKey: "maxNumberOfPeriods")
         aCoder.encode(earliestPeriodStart, forKey: "earliest")
@@ -19,7 +19,7 @@ class Timegrid: NSObject, NSCoding {
         aCoder.encode(periodStarts, forKey: "periodStarts")
     }
     
-    required init?(coder aDecoder: NSCoder) {
+    public required init?(coder aDecoder: NSCoder) {
         self.numberOfDays = aDecoder.decodeInteger(forKey: "numberOfDays")
         self.maxNumberOfPeriods = aDecoder.decodeInteger(forKey: "maxNumberOfPeriods")
         self.earliestPeriodStart = aDecoder.decodeInteger(forKey: "earliest")
@@ -29,71 +29,65 @@ class Timegrid: NSObject, NSCoding {
     }
     
     
-    var numberOfDays = 1
-    var maxNumberOfPeriods = 1
-    var earliestPeriodStart: Int = 2400
-    var latestPeriodEnd: Int = 2400
-    var periods = [Int:GridItem]()
-    var periodStarts = [Int:Int]()
+    public var numberOfDays = 1
+    public var maxNumberOfPeriods = 1
+    public var earliestPeriodStart: Int = 2400
+    public var latestPeriodEnd: Int = 2400
+    public var periods = [Int:GridItem]()
+    public var periodStarts = [Int:Int]()
     
-    init(_ data: Data) {
-        do {
-            let json = try JSON(data: data)
-            
-            self.numberOfDays = (json["result"].array?.count)!
-            
-            var lastPeriod: GridItem?
-            
-            for i in 0...(json["result"].array![0]["timeUnits"].array!.count - 1) {
-                let period = json["result"].array![0]["timeUnits"].array![i]
-                let item = GridItem(period, previous: lastPeriod)
-                lastPeriod = item
-                periods[i] = item
-                periodStarts[item.start] = (i + 1)
+    public init(_ json: JSON) {
+        self.numberOfDays = (json["result"].array?.count)!
+        
+        var lastPeriod: GridItem?
+        
+        for i in 0...(json["result"].array![0]["timeUnits"].array!.count - 1) {
+            let period = json["result"].array![0]["timeUnits"].array![i]
+            let item = GridItem(period, previous: lastPeriod)
+            lastPeriod = item
+            periods[i] = item
+            periodStarts[item.start] = (i + 1)
+        }
+        
+        for day in json["result"].array! {
+            if maxNumberOfPeriods <= day["timeUnits"].count {
+                maxNumberOfPeriods = day["timeUnits"].count
             }
             
-            for day in json["result"].array! {
-                if maxNumberOfPeriods <= day["timeUnits"].count {
-                    maxNumberOfPeriods = day["timeUnits"].count
-                }
-                
-                let firstPeriod = day["timeUnits"][0]["startTime"].int
-                
-                if firstPeriod! <= earliestPeriodStart {
-                    earliestPeriodStart = firstPeriod!
-                }
-                
-                let lastPeriodId = day["timeUnits"].count - 1
-                let endTime = day["timeUnits"][lastPeriodId]["endTime"].int
-                
-                if endTime! >= latestPeriodEnd {
-                    latestPeriodEnd = endTime!
-                }
+            let firstPeriod = day["timeUnits"][0]["startTime"].int
+            
+            if firstPeriod! <= earliestPeriodStart {
+                earliestPeriodStart = firstPeriod!
             }
-        } catch let err {
-            print(err.localizedDescription)
+            
+            let lastPeriodId = day["timeUnits"].count - 1
+            let endTime = day["timeUnits"][lastPeriodId]["endTime"].int
+            
+            if endTime! >= latestPeriodEnd {
+                latestPeriodEnd = endTime!
+            }
         }
     }
 }
 
-class GridItem: NSObject, NSCoding {
-    func encode(with aCoder: NSCoder) {
+public class GridItem: NSObject, NSCoding {
+    public func encode(with aCoder: NSCoder) {
         aCoder.encode(start, forKey: "start")
         aCoder.encode(end, forKey: "end")
         aCoder.encode(name, forKey: "name")
     }
     
-    required init?(coder aDecoder: NSCoder) {
+    public required init?(coder aDecoder: NSCoder) {
         self.start = aDecoder.decodeInteger(forKey: "start")
         self.end = aDecoder.decodeInteger(forKey: "end")
         self.name = aDecoder.decodeObject(forKey: "name") as! String
     }
     
-    var start: Int = 0
-    var end: Int = 0
-    var name: String = ""
+    public var start: Int = 0
+    public var end: Int = 0
+    public var name: String = ""
     
-    init(_ json: JSON, previous: GridItem?) {
+    public init(_ json: JSON, previous: GridItem?) {
         start = json["startTime"].int!
         end = json["endTime"].int!
         name = json["name"].string!

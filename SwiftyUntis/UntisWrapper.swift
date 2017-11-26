@@ -1,5 +1,5 @@
 //
-//  UntisWrapper.swift
+//  Untis.swift
 //  On Time(table)
 //
 //  Created by Henrik Panhans on 08.11.17.
@@ -9,38 +9,43 @@
 import Alamofire
 import SwiftyJSON
 
-enum Function: String {
-    case authenticate = "authenticate";
-    case logout = "logout";
-    case lastImport = "getLatestImportTime";
-    case gridUnits = "getTimegridUnits";
-    case teachers = "getTeachers";
-    case students = "getStudents";
-    case courses = "getKlassen";
-    case subjects = "getSubjects";
-    case schedule = "getTimetable";
-    case rooms = "getRooms";
-}
-
-enum ErrorType: String {
+public enum ErrorType: String {
     case invalidDate = "no allowed date";
     case unauthenticated = "not authenticated";
     case insufficientRights = "no right for"
 }
 
-class UntisWrapper {
-    let defaults = UserDefaults.standard
+public enum PostMethod {
+    case alamofire;
+    case nsurlsession;
+}
+
+public class Untis {
+    enum Function: String {
+        case authenticate = "authenticate";
+        case logout = "logout";
+        case lastImport = "getLatestImportTime";
+        case gridUnits = "getTimegridUnits";
+        case teachers = "getTeachers";
+        case students = "getStudents";
+        case courses = "getKlassen";
+        case subjects = "getSubjects";
+        case schedule = "getTimetable";
+        case rooms = "getRooms";
+    }
+    
     private let baseURL = "https://mese.webuntis.com/WebUntis/jsonrpc.do"
-    var schoolName: String!
-    var user: String!
-    var password: String!
-    var authenticated = false
-    var login: Login?
-    var lastImport = Date()
-    var weekOnDisplay = Date().week()
-    weak var delegate: UntisDelegate?
-    var weeklySchedules = [Int:Schedule]() {
+    public var schoolName: String?
+    public var user: String?
+    public var password: String?
+    public var authenticated = false
+    public var login: Login?
+    public var lastImport = Date()
+    public var weekOnDisplay = Date().week()
+    public weak var delegate: UntisDelegate?
+    public var weeklySchedules = [Int:Schedule]() {
         didSet {
+            delegate?.objectChanged(weeklySchedules as NSObject)
             delegate?.timegridDidRefresh()
         }
     }
@@ -48,13 +53,11 @@ class UntisWrapper {
     private var newestSchedule: Schedule? {
         didSet {
             weeklySchedules[newestSchedule!.week] = newestSchedule
-            self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: newestSchedule!), forKey: "\(newestSchedule!.week)_schedule")
-            
             delegate?.scheduleDidRefresh(for: newestSchedule!.week, old: oldValue, new: newestSchedule!)
         }
     }
     
-    var currentDay = Date() {
+    public var currentDay = Date() {
         didSet {
             weekOnDisplay = currentDay.week()
             
@@ -68,100 +71,73 @@ class UntisWrapper {
         }
     }
     
-    var sessionId: String? {
+    public var sessionId: String? {
         didSet {
             authenticated = true
         }
     }
     
-    var timeGrid: Timegrid? {
+    public var timeGrid: Timegrid? {
         didSet {
             delegate?.timegridDidRefresh()
-            self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: timeGrid!), forKey: "timegrid")
-            self.defaults.synchronize()
+            delegate?.objectChanged(timeGrid!)
         }
     }
     
-    var teachers = [Int:Teacher]() {
-        didSet {
-            delegate?.timegridDidRefresh()
-        }
-    }
-    
-    var students = [Int:Student]() {
+    public var teachers = [Int:Teacher]() {
         didSet {
             delegate?.timegridDidRefresh()
         }
     }
     
-    var courses = [Int:Course]() {
+    public var students = [Int:Student]() {
         didSet {
             delegate?.timegridDidRefresh()
-            self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: courses), forKey: "courses")
-            self.defaults.synchronize()
         }
     }
     
-    var subjects = [Int:Subject]() {
+    public var courses = [Int:Course]() {
         didSet {
             delegate?.timegridDidRefresh()
-            self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: subjects), forKey: "subjects")
-            self.defaults.synchronize()
+            delegate?.objectChanged(courses as NSObject)
         }
     }
     
-    var rooms = [Int:Room]() {
+    public var subjects = [Int:Subject]() {
         didSet {
             delegate?.timegridDidRefresh()
-            self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: rooms), forKey: "rooms")
-            self.defaults.synchronize()
+            delegate?.objectChanged(subjects as NSObject)
         }
     }
     
-    func serializeDefaults() {
-        if let grid = self.defaults.object(forKey: "timegrid") as? Data {
-            self.timeGrid = NSKeyedUnarchiver.unarchiveObject(with: grid) as! Timegrid
-            print("found timegrid")
+    public var rooms = [Int:Room]() {
+        didSet {
+            delegate?.timegridDidRefresh()
+            delegate?.objectChanged(rooms as NSObject)
         }
-        
-        if let subjects = self.defaults.object(forKey: "subjects") as? Data {
-            self.subjects = NSKeyedUnarchiver.unarchiveObject(with: subjects) as! [Int:Subject]
-            print("found subjects")
-        }
-        
-        if let rooms = self.defaults.object(forKey: "rooms") as? Data {
-            self.rooms = NSKeyedUnarchiver.unarchiveObject(with: rooms) as! [Int:Room]
-            print("found rooms")
-        }
-        
-        if let schedule = self.defaults.object(forKey: "\(currentDay.week())_schedule") as? Data {
-            print("found a schedule")
-            let sched = NSKeyedUnarchiver.unarchiveObject(with: schedule) as! Schedule
-            weeklySchedules[sched.week] = sched
-        }
-        
-        delegate?.timegridDidRefresh()
     }
     
-    init(user: String, password: String, school: String) {
+    public init?(user: String, password: String, school: String) {
         self.user = user
         self.password = password
         self.schoolName = school
-        
-        self.serializeDefaults()
     }
     
-    init(school: String) {
+    public init?(school: String) {
         self.schoolName = school
-        
-        self.serializeDefaults()
     }
     
-    func authenticate(completion: ((Error?, String?) -> Void)?) {
+    public init() {
+        self.user = "Unknown User"
+        self.password = "PseudoPassword"
+        self.schoolName = "Unknown School"
+    }
+    
+    public func authenticate(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
         let parameters: [String:Any] = ["user": user!,
                                         "password": password!,
                                         "client": "CLIENT"]
-        self.request(.authenticate, parameters: parameters) { (js, error) in
+        self.request(.authenticate, method: method, parameters: parameters) { (js, error) in
             if let json = js {
                 if json["error"].null == nil {
                     self.authenticated = false
@@ -178,146 +154,96 @@ class UntisWrapper {
         }
     }
     
-    func requestLastImport() {
-        self.request(.lastImport, parameters: [:]) { (js, error) in
+    public func requestLastImport(method: PostMethod = .alamofire) {
+        self.request(.lastImport, method: method, parameters: [:]) { (js, error) in
+            if let json = js {
+                if json["error"].null != nil {
+                    self.lastImport = Date(timeIntervalSince1970: Double(json["result"].int!))
+                } else {
+                    print("Could not get last import date. Reason: \(json["error"]["message"].string!)")
+                }
+            }
+        }
+    }
+    
+    public func logout(method: PostMethod = .alamofire) {
+        self.request(.logout, method: method, parameters: [:], completion: nil)
+    }
+    
+    public func requestTimegrid(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.gridUnits, method: method, parameters: [:]) { (js, error) in
             if let json = js {
                 if json["error"].null == nil {
-                    print(json["error"]["message"].string)
+                    completion?(error, json["error"]["message"].string)
                 } else {
-                    self.lastImport = Date(timeIntervalSince1970: Double(json["result"].int!))
+                    DispatchQueue.global(qos: .utility).async {
+                        self.timeGrid = Timegrid(json)
+                        completion?(error, nil)
+                    }
                 }
+            } else {
+                completion?(error, nil)
             }
         }
     }
     
-    func logout() {
-        self.request(.logout, parameters: [:], completion: nil)
+    public func validateSchool(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.teachers, method: method, parameters: [:]) { (js, error) in
+            if let json = js {
+                if json["error"]["message"].string == "not authenticated" {
+                    completion?(nil, "Confirmed school name")
+                } else {
+                    completion?(error, json["error"]["message"].string)
+                }
+            } else {
+                completion?(error, nil)
+            }
+        }
     }
     
-    func requestTimegrid(completion: ((Bool, String?) -> Void)?) {
-        let url = buildUrl(sessionId)
-        let parameters = constructParams("getTimegridUnits", params: [:])
-        
-        Alamofire.request(url!, method: .post, parameters: parameters, encoding: JSONEncoding.default).validate().responseJSON { (response) in
-            switch response.result {
-            case .success:
-                if let data = response.data {
-                    self.timeGrid = Timegrid(data)
+    public func requestCourses(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.courses, method: method, parameters: [:]) { (js, error) in
+            if let json = js {
+                if json["error"].null == nil {
+                    completion?(error, json["error"]["message"].string)
+                } else {
+                    DispatchQueue.global(qos: .utility).async {
+                        for obj in json["result"].array! {
+                            let course = Course(obj)
+                            self.courses[course.id] = course
+                        }
+                        completion?(error, nil)
+                    }
+                }
+            } else {
+                completion?(error, nil)
+            }
+        }
+    }
+    
+    public func requestSubjects(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.subjects, method: method, parameters: [:]) { (js, error) in
+            if let json = js {
+                if json["error"].null == nil {
+                    completion?(error, json["error"]["message"].string)
+                } else {
+                    DispatchQueue.global(qos: .utility).async {
+                        for obj in json["result"].array! {
+                            let subject = Subject(obj)
+                            self.subjects[subject.id] = subject
+                        }
+                        completion?(error, nil)
+                    }
                     
-                    do {
-                        let json = try JSON(data: data)
-                        
-                        if json["error"].null == nil {
-                            completion?(false, json["error"]["message"].string)
-                        } else {
-                            completion?(true, nil)
-                        }
-                    } catch let err {
-                        completion?(false, err.localizedDescription)
-                    }
                 }
-            case .failure(let error):
-                print(error)
-                completion?(false, error.localizedDescription)
+            } else {
+                completion?(error, nil)
             }
         }
     }
     
-    func validateSchool(completion: ((Bool, String?) -> Void)?) {
-        let url = buildUrl(sessionId)
-        let jsonParams = constructParams("getTeachers", params: [:])
-        
-        Alamofire.request(url!, method: .post, parameters: jsonParams, encoding: JSONEncoding.default).validate().responseJSON { (response) in
-            switch response.result {
-            case .success:
-                if let data = response.data {
-                    do {
-                        let json = try JSON(data: data)
-                        
-                        if json["error"]["message"].string == "not authenticated" {
-                            completion?(true, "Confirmed school name")
-                        } else {
-                            completion?(false, json["error"]["message"].string)
-                        }
-                    } catch let err {
-                        completion?(false, err.localizedDescription)
-                    }
-                }
-            case .failure(let error):
-                print(error)
-                completion?(false, error.localizedDescription)
-            }
-        }
-    }
-    
-    func requestCourses(completion: ((Bool, String?) -> Void)?) {
-        let url = buildUrl(sessionId)
-        let jsonParams = constructParams("getKlassen", params: [:])
-        
-        Alamofire.request(url!, method: .post, parameters: jsonParams, encoding: JSONEncoding.default).validate().responseJSON { (response) in
-            switch response.result {
-            case .success:
-                if let data = response.data {
-                    do {
-                        let json = try JSON(data: data)
-                        
-                        if json["error"].null == nil {
-                            completion?(false, json["error"]["message"].string)
-                        } else {
-                            DispatchQueue.global(qos: .utility).async {
-                                for obj in json["result"].array! {
-                                    let course = Course(obj)
-                                    self.courses[course.id] = course
-                                }
-                            }
-                            completion?(true, nil)
-                        }
-                    } catch let err {
-                        completion?(false, err.localizedDescription)
-                    }
-                }
-            case .failure(let error):
-                print(error)
-                completion?(false, error.localizedDescription)
-            }
-        }
-    }
-    
-    func requestSubjects(completion: ((Bool, String?) -> Void)?) {
-        let url = buildUrl(sessionId)
-        let jsonParams = constructParams("getSubjects", params: [:])
-        
-        Alamofire.request(url!, method: .post, parameters: jsonParams, encoding: JSONEncoding.default).validate().responseJSON { (response) in
-            switch response.result {
-            case .success:
-                if let data = response.data {
-                    do {
-                        let json = try JSON(data: data)
-                        
-                        if json["error"].null == nil {
-                            completion?(false, json["error"]["message"].string)
-                        } else {
-                            DispatchQueue.global(qos: .utility).async {
-                                for obj in json["result"].array! {
-                                    let subject = Subject(obj)
-                                    self.subjects[subject.id] = subject
-                                }
-                            }
-                            completion?(true, nil)
-                        }
-                    } catch let err {
-                        completion?(false, err.localizedDescription)
-                    }
-                }
-            case .failure(let error):
-                print(error)
-                completion?(false, error.localizedDescription)
-            }
-        }
-    }
-    
-    func requestStudents(completion: ((Error?, String?) -> Void)?) {
-        self.request(.students, parameters: [:]) { (js, err) in
+    public func requestStudents(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.students, method: method, parameters: [:]) { (js, err) in
             if let json = js {
                 if json["error"].null == nil {
                     completion?(err, json["error"]["message"].string)
@@ -327,16 +253,15 @@ class UntisWrapper {
                             let student = Student(obj)
                             self.students[student.id] = student
                         }
+                        completion?(err, nil)
                     }
-
-                    completion?(err, nil)
                 }
             } else { completion?(err, "No JSON parsed") }
         }
     }
     
-    func requestTeachers(completion: ((Error?, String?) -> Void)?) {
-        self.request(.teachers, parameters: [:]) { (json, err) in
+    public func requestTeachers(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.teachers, method: method, parameters: [:]) { (json, err) in
             if let js = json {
                 if js["error"].null == nil {
                     completion?(err, js["error"]["message"].string)
@@ -346,47 +271,47 @@ class UntisWrapper {
                             let teacher = Teacher(obj)
                             self.teachers[teacher.id] = teacher
                         }
+                        completion?(err, nil)
                     }
-                    completion?(err, nil)
                 }
             } else { completion?(err, "No JSON parsed") }
         }
     }
     
-    func requestRooms(completion: ((Error?, String?) -> Void)?) {
-        self.request(.rooms, parameters: [:]) { (json, err) in
+    public func requestRooms(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.rooms, method: method, parameters: [:]) { (json, error) in
             if let js = json {
                 if js["error"].null == nil {
-                    completion?(err, js["error"]["message"].string)
+                    completion?(error, js["error"]["message"].string)
                 } else {
                     DispatchQueue.global(qos: .utility).async {
                         for obj in js["result"].array! {
                             let room = Room(obj)
                             self.rooms[room.id] = room
                         }
+                        completion?(error, nil)
                     }
-                    completion?(err, nil)
                 }
-            } else { completion?(err, "No JSON parsed") }
+            } else { completion?(error, nil) }
         }
     }
     
-    func requestSchedule(for dates: [Date], feedback: Bool = false, completion: ((Error?, String?) -> Void)?) {
+    public func requestSchedule(for dates: [Date], feedback: Bool = false, method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
-        
-        print(formatter.string(from: dates[0]), "to", formatter.string(from: dates.last!))
         
         let params: [String:Any] = ["id": self.login?.personId ?? 0,
                                     "type": self.login?.personType ?? 5,
                                     "startDate": formatter.string(from: dates[0]),
                                     "endDate": formatter.string(from: dates.last!)]
         
-        self.request(.schedule, parameters: params) { (json, err) in
+        self.request(.schedule, method: method, parameters: params) { (json, err) in
             if let js = json {
                 if feedback {
                     print("feedback is activated")
-                    js["error"].isEmpty.tapticFeedback()
+                    DispatchQueue.main.async {
+                        js["error"].isEmpty.tapticFeedback()
+                    }
                 }
                 
                 if js["error"].null == nil {
@@ -405,20 +330,45 @@ class UntisWrapper {
         }
     }
     
-    func request(_ function: Function, parameters: [String:Any], completion: ((JSON?, Error?) -> Void)?) {
+    private func request(_ function: Function, method: PostMethod, parameters: [String:Any], completion: ((JSON?, Error?) -> Void)?) {
         let url = buildUrl(sessionId)
         let jsonParams = constructParams(function.rawValue, params: parameters)
-        Alamofire.request(url!, method: .post, parameters: jsonParams, encoding: JSONEncoding.default).responseJSON { (response) in
-            switch response.result {
-            case .success:
-                do {
-                    let json = try JSON(data: response.data!)
-                    completion?(json, response.error)
-                } catch let err {
+        
+        switch method {
+        case .alamofire:
+            Alamofire.request(url!, method: .post, parameters: jsonParams, encoding: JSONEncoding.default).responseJSON { (response) in
+                switch response.result {
+                case .success:
+                    do {
+                        let json = try JSON(data: response.data!)
+                        completion?(json, response.error)
+                    } catch {
+                        completion?(nil, response.error)
+                    }
+                case .failure:
                     completion?(nil, response.error)
                 }
-            case .failure:
-                completion?(nil, response.error)
+            }
+        case .nsurlsession:
+            if let jsonData = try? JSONSerialization.data(withJSONObject: jsonParams, options: .prettyPrinted) {
+                let request = NSMutableURLRequest(url: url!)
+                request.httpMethod = "POST"
+                
+                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = jsonData
+                
+                let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+                    if let goodData = data {
+                        if let json = try? JSON(data: goodData) {
+                            completion?(json, error)
+                        } else {
+                            completion?(nil, error)
+                        }
+                    } else {
+                        completion?(nil, error)
+                    }
+                }
+                task.resume()
             }
         }
     }
@@ -430,34 +380,37 @@ class UntisWrapper {
     }
     
     private func buildUrl(_ session: String?) -> URL? {
-        guard var url = baseURL + "?school=\(schoolName!)" as? String else {
-            print("school not set or not authenticated")
+        if schoolName != nil {
+            var url = baseURL + "?school=\(schoolName!)"
+            
+            if session != nil {
+                url = url + "&jsessionid=\(session!)"
+            }
+            
+            let encodedUrl = url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+            
+            return URL(string: encodedUrl!)
+        } else {
+            return nil
         }
-        
-        if session != nil {
-            url = url + "&jsessionid=\(session!)"
-        }
-        
-        let encodedUrl = url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-        
-        return URL(string: encodedUrl!)
     }
 }
 
-protocol UntisDelegate: class {
+public protocol UntisDelegate: class {
     func timegridDidRefresh()
     func scheduleDidRefresh(for week: Int, old: Schedule?, new: Schedule)
     func weekDidChange(old: Date, new: Date)
+    func objectChanged(_ object: NSObject)
 }
 
-struct Login {
-    var sessionId: String!
-    var personType: Int!
-    var personId: Int!
-    var classId: Int!
-    var request: Int!
+public struct Login {
+    public var sessionId: String?
+    public var personType: Int?
+    public var personId: Int?
+    public var classId: Int?
+    public var request: Int?
     
-    init(_ json: JSON) {
+    public init(_ json: JSON) {
         sessionId = json["result"]["sessionId"].string
         personType = json["result"]["personType"].int
         personId = json["result"]["personId"].int
