@@ -31,18 +31,24 @@ public class Schedule: NSObject, NSCoding, Comparable {
     }
     
     public static func ==(lhs: Schedule, rhs: Schedule) -> Bool {
-        var somethingChanged = false
-        
-        for key in lhs.periods.keys {
-            if let leftPeriod = lhs.periods[key], let rightPeriod = lhs.periods[key] {
-                if leftPeriod.state != rightPeriod.state {
-                    print("state changed")
-                    somethingChanged = true
-                    return true
-                }
+        for period in lhs.periods {
+            if period.value.state != rhs.periods[period.key]?.state {
+                return true
+                print("found an anomaly at collumn and row \(period.key.section) - \(period.key.row)")
             }
         }
-        return somethingChanged
+        return false
+    }
+    
+    public func compareTo(_ other: Schedule) -> [IndexPath:Period] {
+        var changedPeriods = [IndexPath:Period]()
+        for period in self.periods {
+            if period.value.state != other.periods[period.key]?.state {
+                changedPeriods[period.key] = other.periods[period.key]!
+                print("found an anomaly at collumn and row \(period.key.section) - \(period.key.row)")
+            }
+        }
+        return changedPeriods
     }
     
     public var timeGrid: Timegrid

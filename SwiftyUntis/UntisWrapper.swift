@@ -43,6 +43,7 @@ public class Untis {
     public var lastImport = Date()
     public var weekOnDisplay = Date().week()
     public weak var delegate: UntisDelegate?
+    
     public var weeklySchedules = [Int:Schedule]() {
         didSet {
             delegate?.objectChanged(weeklySchedules as NSObject)
@@ -190,7 +191,7 @@ public class Untis {
     public func validateSchool(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
         self.request(.teachers, method: method, parameters: [:]) { (js, error) in
             if let json = js {
-                if json["error"]["message"].string == "not authenticated" {
+                if json["error"]["message"].string == "not authenticated" || json["error"]["message"].string == "no right for getTeachers()" {
                     completion?(nil, "Confirmed school name")
                 } else {
                     completion?(error, json["error"]["message"].string)
