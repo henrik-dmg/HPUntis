@@ -14,6 +14,7 @@ public enum PeriodState: String  {
     case cancelled = "cancelled";
     case irregular = "irregular";
     case undetermined = "";
+    
 }
 
 @objc(Period)

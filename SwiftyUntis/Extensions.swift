@@ -180,17 +180,19 @@ public extension Int {
     }
     
     public func toDate() -> Date {
+        let possibleFormats = ["Hmm", "HHmm", "yyyyMMdd"]
+        
         let intString = String(self)
         let formatter = DateFormatter()
-        formatter.dateFormat = "Hmm"
-        if let date = formatter.date(from: intString) {
-            return date
-        } else {
-            formatter.dateFormat = "HHmm"
+        formatter.timeZone = TimeZone.current
+        
+        for format in possibleFormats {
+            formatter.dateFormat = format
             if let date = formatter.date(from: intString) {
                 return date
             }
-            return Date(timeIntervalSince1970: 0)
         }
+        
+        return Date(timeIntervalSince1970: 0)
     }
 }

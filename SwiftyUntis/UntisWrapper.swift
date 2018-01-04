@@ -32,6 +32,7 @@ public class Untis {
         case subjects = "getSubjects";
         case schedule = "getTimetable";
         case rooms = "getRooms";
+        case holidays = "getHolidays";
     }
     
     private let baseURL = "https://mese.webuntis.com/WebUntis/jsonrpc.do"
@@ -118,11 +119,19 @@ public class Untis {
         }
     }
     
+    public var holidays = [Int:Holiday]() {
+        didSet {
+            delegate?.timegridDidRefresh()
+            delegate?.objectChanged(holidays as NSObject)
+        }
+    }
+    
     public init?(user: String, password: String, school: String) {
         self.user = user
         self.password = password
         self.schoolName = school
     }
+    
     
     public init?(school: String) {
         self.schoolName = school
@@ -132,6 +141,35 @@ public class Untis {
         self.user = "Unknown User"
         self.password = "PseudoPassword"
         self.schoolName = "Unknown School"
+    }
+    
+    
+    public func requestAll(method: PostMethod = .alamofire) {
+        if authenticated {
+            self.requestLastImport()
+            self.requestTimegrid(completion: nil)
+            self.requestRooms(completion: nil)
+            self.requestSubjects(completion: nil)
+            self.requestCourses(completion: nil)
+            self.requestStudents(completion: nil)
+            self.requestTeachers(completion: nil)
+        } else {
+            print("Error: Untis user is not authenticated")
+        }
+    }
+    
+    public func compare(old schedule: Schedule, new: Schedule) -> [IndexPath:Period] {
+        var changedPeriods = [IndexPath:Period]()
+        
+        for period in new.periods {
+            let newPeriod = period.value
+            
+            if let oldPeriod = schedule.periods[period.key], oldPeriod.state != newPeriod.state {
+                changedPeriods[period.key] = newPeriod
+            }
+        }
+        
+        return changedPeriods
     }
     
     public func authenticate(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
@@ -297,6 +335,24 @@ public class Untis {
         }
     }
     
+    public func requestHolidays(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        self.request(.holidays, method: method, parameters: [:]) { (json, error) in
+            if let js = json {
+                if js["error"].null == nil {
+                    completion?(error, js["error"]["message"].string)
+                } else {
+                    DispatchQueue.global(qos: .utility).async {
+                        for obj in js["result"].array! {
+                            let holiday = Holiday(obj)
+                            self.holidays[holiday.id] = holiday
+                        }
+                        completion?(error, nil)
+                    }
+                }
+            } else { completion?(error, nil) }
+        }
+    }
+    
     public func requestSchedule(for dates: [Date], feedback: Bool = false, method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
@@ -306,28 +362,36 @@ public class Untis {
                                     "startDate": formatter.string(from: dates[0]),
                                     "endDate": formatter.string(from: dates.last!)]
         
-        self.request(.schedule, method: method, parameters: params) { (json, err) in
-            if let js = json {
-                if feedback {
-                    print("feedback is activated")
-                    DispatchQueue.main.async {
-                        js["error"].isEmpty.tapticFeedback()
+        if self.timeGrid != nil {
+            self.request(.schedule, method: method, parameters: params) { (json, err) in
+                if let js = json {
+                    if feedback {
+                        print("feedback is activated")
+                        DispatchQueue.main.async {
+                            js["error"].isEmpty.tapticFeedback()
+                        }
                     }
-                }
-                
-                if js["error"].null == nil {
-                    completion?(err, js["error"]["message"].string)
+                    
+                    if js["error"].null == nil {
+                        completion?(err, js["error"]["message"].string)
+                    } else {
+                        DispatchQueue.global(qos: .userInteractive).async {
+                            let schedule = Schedule(js, grid: self.timeGrid!, dateRange: dates)
+                            
+                            self.newestSchedule = schedule
+                        }
+                        completion?(err, nil)
+                    }
                 } else {
-                    DispatchQueue.global(qos: .userInteractive).async {
-                        let schedule = Schedule(js, grid: self.timeGrid!, dateRange: dates)
-                        
-                        self.newestSchedule = schedule
-                    }
                     completion?(err, nil)
                 }
-            } else {
-               completion?(err, nil)
             }
+        } else {
+            self.requestTimegrid(completion: { (error, message) in
+                if error == nil && message == nil {
+                    self.requestSchedule(for: dates, feedback: feedback, method: method, completion: nil)
+                }
+            })
         }
     }
     
@@ -366,6 +430,7 @@ public class Untis {
                             completion?(nil, error)
                         }
                     } else {
+                        
                         completion?(nil, error)
                     }
                 }

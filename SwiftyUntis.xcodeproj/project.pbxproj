@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		39E1D5B92281D5F0C323E91D /* Pods_SwiftyUntis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21B6F3A3A72AB3B0B2B4F463 /* Pods_SwiftyUntis.framework */; };
+		C36EF1341FEA812800DEEA29 /* Holiday.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36EF1331FEA812800DEEA29 /* Holiday.swift */; };
 		C36FB88D1FC32ECA000208E7 /* SwiftyUntis.h in Headers */ = {isa = PBXBuildFile; fileRef = C36FB88B1FC32ECA000208E7 /* SwiftyUntis.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C3DDAC931FC32FDF00EB0F44 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3DDAC891FC32FDE00EB0F44 /* Extensions.swift */; };
 		C3DDAC941FC32FDF00EB0F44 /* Timegrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3DDAC8A1FC32FDE00EB0F44 /* Timegrid.swift */; };
@@ -24,6 +25,7 @@
 /* Begin PBXFileReference section */
 		21B6F3A3A72AB3B0B2B4F463 /* Pods_SwiftyUntis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftyUntis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		614DAD8B6C5C7570B0AC76F2 /* Pods-SwiftyUntis.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftyUntis.release.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftyUntis/Pods-SwiftyUntis.release.xcconfig"; sourceTree = "<group>"; };
+		C36EF1331FEA812800DEEA29 /* Holiday.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Holiday.swift; sourceTree = "<group>"; };
 		C36FB8881FC32ECA000208E7 /* SwiftyUntis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SwiftyUntis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C36FB88B1FC32ECA000208E7 /* SwiftyUntis.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftyUntis.h; sourceTree = "<group>"; };
 		C36FB88C1FC32ECA000208E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -83,8 +85,8 @@
 			isa = PBXGroup;
 			children = (
 				C3DDAC8E1FC32FDE00EB0F44 /* UntisWrapper.swift */,
+				C36EF1331FEA812800DEEA29 /* Holiday.swift */,
 				C3DDAC8F1FC32FDE00EB0F44 /* Course.swift */,
-				C3DDAC891FC32FDE00EB0F44 /* Extensions.swift */,
 				C3DDAC8C1FC32FDE00EB0F44 /* Period.swift */,
 				C3DDAC911FC32FDF00EB0F44 /* Room.swift */,
 				C3DDAC8B1FC32FDE00EB0F44 /* Schedule.swift */,
@@ -92,6 +94,7 @@
 				C3DDAC8D1FC32FDE00EB0F44 /* Subject.swift */,
 				C3DDAC901FC32FDF00EB0F44 /* Teacher.swift */,
 				C3DDAC8A1FC32FDE00EB0F44 /* Timegrid.swift */,
+				C3DDAC891FC32FDE00EB0F44 /* Extensions.swift */,
 				C36FB88B1FC32ECA000208E7 /* SwiftyUntis.h */,
 				C36FB88C1FC32ECA000208E7 /* Info.plist */,
 			);
@@ -226,6 +229,7 @@
 			files = (
 				C3DDAC951FC32FDF00EB0F44 /* Schedule.swift in Sources */,
 				C3DDAC991FC32FDF00EB0F44 /* Course.swift in Sources */,
+				C36EF1341FEA812800DEEA29 /* Holiday.swift in Sources */,
 				C3DDAC981FC32FDF00EB0F44 /* UntisWrapper.swift in Sources */,
 				C3DDAC9C1FC32FDF00EB0F44 /* Student.swift in Sources */,
 				C3DDAC971FC32FDF00EB0F44 /* Subject.swift in Sources */,

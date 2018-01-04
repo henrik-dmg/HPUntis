@@ -33,8 +33,9 @@ public class Schedule: NSObject, NSCoding, Comparable {
     public static func ==(lhs: Schedule, rhs: Schedule) -> Bool {
         for period in lhs.periods {
             if period.value.state != rhs.periods[period.key]?.state {
-                return true
                 print("found an anomaly at collumn and row \(period.key.section) - \(period.key.row)")
+                return true
+
             }
         }
         return false

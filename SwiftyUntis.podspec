@@ -8,7 +8,7 @@ s.summary = "A lightweight wrapper for the Untis JSON API"
 s.requires_arc = true
 
 # 2
-s.version = "1.2.0"
+s.version = "1.3.0"
 
 # 3
 s.license = { :type => "MIT", :text => <<-LICENSE
