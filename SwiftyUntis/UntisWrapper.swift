@@ -35,7 +35,7 @@ public class Untis {
         case holidays = "getHolidays";
     }
     
-    private let baseURL = "https://mese.webuntis.com/WebUntis/jsonrpc.do"
+    public var baseURL = "https://mese.webuntis.com/WebUntis/jsonrpc.do"
     public var schoolName: String?
     public var user: String?
     public var password: String?
@@ -126,10 +126,11 @@ public class Untis {
         }
     }
     
-    public init?(user: String, password: String, school: String) {
+    public init?(user: String, password: String, school: String, url: String) {
         self.user = user
         self.password = password
         self.schoolName = school
+        self.baseURL = url
     }
     
     
@@ -141,6 +142,7 @@ public class Untis {
         self.user = "Unknown User"
         self.password = "PseudoPassword"
         self.schoolName = "Unknown School"
+        self.baseURL = "https://mese.webuntis.com/WebUntis/jsonrpc.do"
     }
     
     
@@ -149,6 +151,7 @@ public class Untis {
             self.requestLastImport()
             self.requestTimegrid(completion: nil)
             self.requestRooms(completion: nil)
+            self.requestHolidays(completion: nil)
             self.requestSubjects(completion: nil)
             self.requestCourses(completion: nil)
             self.requestStudents(completion: nil)
@@ -357,41 +360,44 @@ public class Untis {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
         
-        let params: [String:Any] = ["id": self.login?.personId ?? 0,
-                                    "type": self.login?.personType ?? 5,
-                                    "startDate": formatter.string(from: dates[0]),
-                                    "endDate": formatter.string(from: dates.last!)]
-        
-        if self.timeGrid != nil {
-            self.request(.schedule, method: method, parameters: params) { (json, err) in
-                if let js = json {
-                    if feedback {
-                        print("feedback is activated")
-                        DispatchQueue.main.async {
-                            js["error"].isEmpty.tapticFeedback()
+        if let login = self.login {
+            let params: [String:Any] = ["id": login.personId,
+                                        "type": login.personType,
+                                        "startDate": formatter.string(from: dates[0]),
+                                        "endDate": formatter.string(from: dates.last!)]
+//            if params["id"] as! Int == 0 {
+//                params["type"] = 1
+//                params["id"] = 713
+//            }
+            
+            if self.timeGrid != nil {
+                self.request(.schedule, method: method, parameters: params) { (json, err) in
+                    if let js = json {
+                        if feedback {
+                            DispatchQueue.main.async {
+                                js["error"].isEmpty.tapticFeedback()
+                            }
                         }
-                    }
-                    
-                    if js["error"].null == nil {
-                        completion?(err, js["error"]["message"].string)
+                        
+                        if js["error"].null == nil {
+                            completion?(err, js["error"]["message"].string)
+                        } else {
+                            DispatchQueue.global(qos: .userInteractive).async {
+                                let schedule = Schedule(js, grid: self.timeGrid!, dateRange: dates)
+                                
+                                self.newestSchedule = schedule
+                            }
+                            completion?(err, nil)
+                        }
                     } else {
-                        DispatchQueue.global(qos: .userInteractive).async {
-                            let schedule = Schedule(js, grid: self.timeGrid!, dateRange: dates)
-                            
-                            self.newestSchedule = schedule
-                        }
                         completion?(err, nil)
                     }
-                } else {
-                    completion?(err, nil)
                 }
+            } else {
+                print("Error: No timegrid was found")
             }
         } else {
-            self.requestTimegrid(completion: { (error, message) in
-                if error == nil && message == nil {
-                    self.requestSchedule(for: dates, feedback: feedback, method: method, completion: nil)
-                }
-            })
+            print("Error: Untis user not authenticated")
         }
     }
     
@@ -425,6 +431,7 @@ public class Untis {
                 let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
                     if let goodData = data {
                         if let json = try? JSON(data: goodData) {
+                            print(json)
                             completion?(json, error)
                         } else {
                             completion?(nil, error)
@@ -470,17 +477,17 @@ public protocol UntisDelegate: class {
 }
 
 public struct Login {
-    public var sessionId: String?
-    public var personType: Int?
-    public var personId: Int?
-    public var classId: Int?
+    public var sessionId: String
+    public var personType: Int
+    public var personId: Int
+    public var classId: Int
     public var request: Int?
     
     public init(_ json: JSON) {
-        sessionId = json["result"]["sessionId"].string
-        personType = json["result"]["personType"].int
-        personId = json["result"]["personId"].int
-        classId = json["result"]["klasseId"].int
+        sessionId = json["result"]["sessionId"].string!
+        personType = json["result"]["personType"].int!
+        personId = json["result"]["personId"].int!
+        classId = json["result"]["klasseId"].int!
         request = json["id"].int
     }
 }
