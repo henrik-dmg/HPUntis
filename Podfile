@@ -6,6 +6,6 @@ target 'SwiftyUntis' do
   use_frameworks!
 
   pod 'Alamofire'
-pod 'SwiftyJSON'
+  pod 'SwiftyJSON'
 
 end
