@@ -431,7 +431,6 @@ public class Untis {
                 let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
                     if let goodData = data {
                         if let json = try? JSON(data: goodData) {
-                            print(json)
                             completion?(json, error)
                         } else {
                             completion?(nil, error)

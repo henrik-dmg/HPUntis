@@ -1,14 +1,14 @@
 Pod::Spec.new do |s|
 
 # 1
-s.platform = :ios
 s.ios.deployment_target = '10.0'
+s.watchos.deployment_target = '2.0'
 s.name = "SwiftyUntis"
 s.summary = "A lightweight wrapper for the Untis JSON API"
 s.requires_arc = true
 
 # 2
-s.version = "1.3.1"
+s.version = "1.4.0"
 
 # 3
 s.license = { :type => "MIT", :text => <<-LICENSE
@@ -34,7 +34,8 @@ s.source = { :git => "https://github.com/Fri3ndlyGerman/SwiftyUntis.git", :tag =
 
 
 # 7
-s.framework = "UIKit"
+s.ios.framework = "UIKit"
+s.watchos.framework = "WatchKit"
 s.dependency 'Alamofire'
 s.dependency 'SwiftyJSON'
 
