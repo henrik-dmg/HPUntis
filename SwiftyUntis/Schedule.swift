@@ -11,7 +11,7 @@ import Foundation
 import SwiftyJSON
 
 @objc(Schedule)
-public class Schedule: NSObject, NSCoding, Comparable {
+public class Schedule: NSObject, NSCoding {
     public func encode(with aCoder: NSCoder) {
         aCoder.encode(timeGrid, forKey: "timeGrid")
         aCoder.encode(periods, forKey: "periods")
@@ -21,39 +21,29 @@ public class Schedule: NSObject, NSCoding, Comparable {
     
     public required init?(coder aDecoder: NSCoder) {
         timeGrid = aDecoder.decodeObject(forKey: "timeGrid") as! Timegrid
-        periods = aDecoder.decodeObject(forKey: "periods") as! [IndexPath:Period]
+        
+        if let loaded = aDecoder.decodeObject(forKey: "periods") as? [IndexPath:[Int:Period]] {
+            self.periods = loaded
+        }
+        
         week = aDecoder.decodeInteger(forKey: "week")
         columnIds = aDecoder.decodeObject(forKey: "columnIds") as! [Int:Int]
     }
     
-    public static func <(lhs: Schedule, rhs: Schedule) -> Bool {
-        return false
-    }
-    
-    public static func ==(lhs: Schedule, rhs: Schedule) -> Bool {
-        for period in lhs.periods {
-            if period.value.state != rhs.periods[period.key]?.state {
-                print("found an anomaly at collumn and row \(period.key.section) - \(period.key.row)")
-                return true
-
-            }
-        }
-        return false
-    }
-    
-    public func compareTo(_ other: Schedule) -> [IndexPath:Period] {
-        var changedPeriods = [IndexPath:Period]()
-        for period in self.periods {
-            if period.value.state != other.periods[period.key]?.state {
-                changedPeriods[period.key] = other.periods[period.key]!
-                print("found an anomaly at collumn and row \(period.key.section) - \(period.key.row)")
-            }
-        }
-        return changedPeriods
-    }
+    // FIX BEFORE PRODUCTION
+//    public func compareTo(_ other: Schedule) -> [IndexPath:Period] {
+//        var changedPeriods = [IndexPath:Period]()
+//        for period in self.periods {
+//            if period.value.state != other.periods[period.key]?.state {
+//                changedPeriods[period.key] = other.periods[period.key]!
+//                print("found an anomaly at collumn and row \(period.key.section) - \(period.key.row)")
+//            }
+//        }
+//        return changedPeriods
+//    }
     
     public var timeGrid: Timegrid
-    public var periods = [IndexPath:Period]()
+    public var periods = [IndexPath:[Int:Period]]()
     public var week: Int
     private var columnIds = [Int:Int]()
     
@@ -89,7 +79,11 @@ public class Schedule: NSObject, NSCoding, Comparable {
                 let index = IndexPath(row: grid.periodStarts[period.startTime]!,
                                       section: columnIds[period.date.toInt()]!)
                 
-                periods[index] = period
+                if let array = periods[index] {
+                    periods[index]![period.subjectId] = period
+                } else {
+                    periods[index] = [period.subjectId:period]
+                }
             }
         }
     }

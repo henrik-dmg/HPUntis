@@ -29,14 +29,16 @@ public class Timegrid: NSObject, NSCoding {
     }
     
     
-    public var numberOfDays = 1
+    public var numberOfDays = 5
     public var maxNumberOfPeriods = 1
-    public var earliestPeriodStart: Int = 2400
+    public var earliestPeriodStart: Int = 0000
     public var latestPeriodEnd: Int = 2400
     public var periods = [Int:GridItem]()
     public var periodStarts = [Int:Int]()
     
     public init(_ json: JSON) {
+        print(json)
+        
         self.numberOfDays = (json["result"].array?.count)!
         
         var lastPeriod: GridItem?

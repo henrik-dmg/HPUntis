@@ -48,11 +48,10 @@ public class Untis {
     public var weeklySchedules = [Int:Schedule]() {
         didSet {
             delegate?.objectChanged(weeklySchedules as NSObject)
-            delegate?.timegridDidRefresh()
         }
     }
     
-    private var newestSchedule: Schedule? {
+    public var newestSchedule: Schedule? {
         didSet {
             weeklySchedules[newestSchedule!.week] = newestSchedule
             delegate?.scheduleDidRefresh(for: newestSchedule!.week, old: oldValue, new: newestSchedule!)
@@ -88,40 +87,36 @@ public class Untis {
     
     public var teachers = [Int:Teacher]() {
         didSet {
-            delegate?.timegridDidRefresh()
+            //delegate?.timegridDidRefresh()
         }
     }
     
     public var students = [Int:Student]() {
         didSet {
-            delegate?.timegridDidRefresh()
+            //delegate?.timegridDidRefresh()
         }
     }
     
     public var courses = [Int:Course]() {
         didSet {
-            delegate?.timegridDidRefresh()
             delegate?.objectChanged(courses as NSObject)
         }
     }
     
     public var subjects = [Int:Subject]() {
         didSet {
-            delegate?.timegridDidRefresh()
             delegate?.objectChanged(subjects as NSObject)
         }
     }
     
     public var rooms = [Int:Room]() {
         didSet {
-            delegate?.timegridDidRefresh()
             delegate?.objectChanged(rooms as NSObject)
         }
     }
     
     public var holidays = [Int:Holiday]() {
         didSet {
-            delegate?.timegridDidRefresh()
             delegate?.objectChanged(holidays as NSObject)
         }
     }
@@ -148,6 +143,7 @@ public class Untis {
     
     public func requestAll(method: PostMethod = .alamofire) {
         if authenticated {
+            print("Requesting all")
             self.requestLastImport()
             self.requestTimegrid(completion: nil)
             self.requestRooms(completion: nil)
@@ -161,19 +157,20 @@ public class Untis {
         }
     }
     
-    public func compare(old schedule: Schedule, new: Schedule) -> [IndexPath:Period] {
-        var changedPeriods = [IndexPath:Period]()
-        
-        for period in new.periods {
-            let newPeriod = period.value
-            
-            if let oldPeriod = schedule.periods[period.key], oldPeriod.state != newPeriod.state {
-                changedPeriods[period.key] = newPeriod
-            }
-        }
-        
-        return changedPeriods
-    }
+    // FIX BEFORE PRODUCTION
+//    public func compare(old schedule: Schedule, new: Schedule) -> [IndexPath:Period] {
+//        var changedPeriods = [IndexPath:Period]()
+//
+//        for period in new.periods {
+//            let newPeriod = period.value
+//
+//            if let oldPeriod = schedule.periods[period.key], oldPeriod.state != newPeriod.state {
+//                changedPeriods[period.key] = newPeriod
+//            }
+//        }
+//
+//        return changedPeriods
+//    }
     
     public func authenticate(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
         let parameters: [String:Any] = ["user": user!,
@@ -213,6 +210,7 @@ public class Untis {
     }
     
     public func requestTimegrid(method: PostMethod = .alamofire, completion: ((Error?, String?) -> Void)?) {
+        print("Refreshing Timegrid")
         self.request(.gridUnits, method: method, parameters: [:]) { (js, error) in
             if let json = js {
                 if json["error"].null == nil {
@@ -365,10 +363,6 @@ public class Untis {
                                         "type": login.personType,
                                         "startDate": formatter.string(from: dates[0]),
                                         "endDate": formatter.string(from: dates.last!)]
-//            if params["id"] as! Int == 0 {
-//                params["type"] = 1
-//                params["id"] = 713
-//            }
             
             if self.timeGrid != nil {
                 self.request(.schedule, method: method, parameters: params) { (json, err) in
@@ -394,9 +388,10 @@ public class Untis {
                     }
                 }
             } else {
-                print("Error: No timegrid was found")
+                print("Error: Empty Timegrid")
             }
         } else {
+            delegate?.requestFailed()
             print("Error: Untis user not authenticated")
         }
     }
@@ -431,6 +426,7 @@ public class Untis {
                 let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
                     if let goodData = data {
                         if let json = try? JSON(data: goodData) {
+                            print(json)
                             completion?(json, error)
                         } else {
                             completion?(nil, error)
@@ -473,6 +469,7 @@ public protocol UntisDelegate: class {
     func scheduleDidRefresh(for week: Int, old: Schedule?, new: Schedule)
     func weekDidChange(old: Date, new: Date)
     func objectChanged(_ object: NSObject)
+    func requestFailed()
 }
 
 public struct Login {

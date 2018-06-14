@@ -31,7 +31,7 @@ public extension Untis {
     
     func loadFromDisk() {
         if let grid = UserDefaults.standard.object(forKey: "timegrid") as? Data {
-            self.timeGrid = NSKeyedUnarchiver.unarchiveObject(with: grid) as? Timegrid
+            self.timeGrid = (NSKeyedUnarchiver.unarchiveObject(with: grid) as! Timegrid)
             print("found timegrid")
         }
         
