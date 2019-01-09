@@ -26,11 +26,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 s.author = { "Henrik Panhans" => "henrikpanhans@icloud.com" }
 
 # 5 - Replace this URL with your own Github page's URL (from the address bar)
-s.homepage = "https://github.com/Fri3ndlyGerman/SwiftyUntis"
+s.homepage = "https://github.com/Fri3ndlyGerman/HPUntis"
 
 
 # 6 - Replace this URL with your own Git URL from "Quick Setup"
-s.source = { :git => "https://github.com/Fri3ndlyGerman/SwiftyUntis.git", :tag => "#{s.version}"}
+s.source = { :git => "https://github.com/Fri3ndlyGerman/HPUntis.git", :tag => "#{s.version}"}
 
 
 # 7
