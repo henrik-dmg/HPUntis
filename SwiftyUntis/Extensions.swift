@@ -183,7 +183,7 @@ public extension Date {
         let dayOfWeek = calendar.component(.weekday, from: today)
         let weekdays = calendar.range(of: .weekday, in: .weekOfYear, for: today)!
         let days = (weekdays.lowerBound ..< weekdays.upperBound)
-            .flatMap { calendar.date(byAdding: .day, value: $0 - dayOfWeek, to: today) }
+            .compactMap { calendar.date(byAdding: .day, value: $0 - dayOfWeek, to: today) }
             .filter { !calendar.isDateInWeekend($0) }
         return days
     }
