@@ -1,0 +1,6 @@
+framework module Pods_SwiftyUntis {
+  umbrella header "Pods-SwiftyUntis-umbrella.h"
+
+  export *
+  module * { export * }
+}
